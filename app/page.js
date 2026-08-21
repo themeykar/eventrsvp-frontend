@@ -95,7 +95,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-100">
                 <div>
                   <div className="inline-flex items-center gap-1.5 rounded-full bg-[#F8F6ED] px-3 py-1 text-xs font-semibold text-[#57534E] border border-stone-200/70 mb-2">
-                    <Sparkles className="h-3 w-3 text-[#78716C]" />
+                    {/* <Sparkles className="h-3 w-3 text-[#78716C]" /> */}
                     <span>Public Invitation Preview</span>
                   </div>
                   <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#1C1917]">
