@@ -4,12 +4,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -115,15 +116,29 @@ export default function LoginPage() {
             >
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 pr-11 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Submit Button */}

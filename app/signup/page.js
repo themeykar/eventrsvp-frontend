@@ -10,6 +10,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function SignupPage() {
@@ -17,6 +19,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -233,15 +237,29 @@ export default function SignupPage() {
                 >
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 pr-11 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <p className="mt-1 text-[11px] text-[#78716C]">
                   Must be at least 8 characters long.
                 </p>
@@ -254,15 +272,29 @@ export default function SignupPage() {
                 >
                   Confirm password
                 </label>
-                <input
-                  id="passwordConfirmation"
-                  type="password"
-                  required
-                  value={passwordConfirmation}
-                  onChange={(e) => setPasswordConfirmation(e.target.value)}
-                  placeholder="Re-enter your password"
-                  className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
-                />
+                <div className="relative">
+                  <input
+                    id="passwordConfirmation"
+                    type={showConfirmation ? "text" : "password"}
+                    required
+                    value={passwordConfirmation}
+                    onChange={(e) => setPasswordConfirmation(e.target.value)}
+                    placeholder="Re-enter your password"
+                    className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 pr-11 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmation((prev) => !prev)}
+                    aria-label={showConfirmation ? "Hide confirmation password" : "Show confirmation password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
+                  >
+                    {showConfirmation ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Submit Button */}
