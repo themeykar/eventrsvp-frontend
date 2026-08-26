@@ -236,8 +236,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-grain">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-40 mx-auto w-full max-w-5xl px-4 pt-4 sm:pt-6">
-        <nav className="flex items-center justify-between rounded-full border border-stone-200/90 bg-[#FAF8F5]/85 backdrop-blur-md px-5 py-3 shadow-[0_4px_20px_rgba(28,25,23,0.03)] transition-all">
+      <header className="sticky top-0 z-40 mx-auto w-full max-w-5xl px-4 py-4 sm:py-6 bg-[#F8F6ED]/80 backdrop-blur-xs">
+        <nav className="flex items-center justify-between">
           <Link
             href="/dashboard"
             className="flex items-center gap-3 group focus:outline-none"
@@ -372,7 +372,6 @@ export default function DashboardPage() {
               onClick={openModal}
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#E4D9F7] px-6 py-3 text-xs font-semibold text-[#1C1917] border border-[#D4C3F2] hover:bg-[#D7C7F3] shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
-              <Sparkles className="h-4 w-4 text-[#2D253B]" />
               <span>Create Your First Event</span>
             </button>
           </div>

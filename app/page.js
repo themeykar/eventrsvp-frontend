@@ -15,9 +15,9 @@ import {
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col font-sans">
-      {/* Floating Pill Navigation */}
-      <header className="sticky top-0 z-50 mx-auto w-full max-w-5xl px-4 pt-4 sm:pt-6">
-        <nav className="flex items-center justify-between rounded-full border border-stone-200/90 bg-[#FAF8F5]/85 backdrop-blur-md px-5 py-3 shadow-[0_4px_20px_rgba(28,25,23,0.03)] transition-all">
+      {/* Header Navigation */}
+      <header className="sticky top-0 z-50 mx-auto w-full max-w-5xl px-4 py-4 sm:py-6 bg-[#F8F6ED]/80 backdrop-blur-xs">
+        <nav className="flex items-center justify-between">
           {/* Left side: Logo img + Wordmark */}
           <Link
             href="/"
