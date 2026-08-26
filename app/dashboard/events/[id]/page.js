@@ -22,6 +22,8 @@ import {
   Loader2,
   AlertCircle,
   Link as LinkIcon,
+  Pencil,
+  X,
 } from "lucide-react";
 
 /**
@@ -47,6 +49,22 @@ function formatEventDateTime(dateTimeStr) {
   }).format(date);
 
   return `${dateFormatted} • ${timeFormatted}`;
+}
+
+/**
+ * Format ISO datetime string for <input type="datetime-local"> (YYYY-MM-DDTHH:mm in local time).
+ */
+function formatForDateTimeLocal(isoStr) {
+  if (!isoStr) return "";
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 /**
@@ -91,6 +109,18 @@ export default function EventDetailPage() {
 
   // Copy link state
   const [copied, setCopied] = useState(false);
+
+  // Edit Event Modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    description: "",
+    date_time: "",
+    location: "",
+  });
+  const [editFormErrors, setEditFormErrors] = useState({});
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editSubmitError, setEditSubmitError] = useState(null);
 
   // Load event details and RSVPs
   const fetchEventAndRSVPs = useCallback(
@@ -171,6 +201,115 @@ export default function EventDetailPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  // Open Edit Modal pre-filled with current event values
+  const openEditModal = () => {
+    if (!eventData) return;
+    setEditFormData({
+      title: eventData.title || "",
+      description: eventData.description || "",
+      date_time: formatForDateTimeLocal(eventData.date_time),
+      location: eventData.location || "",
+    });
+    setEditFormErrors({});
+    setEditSubmitError(null);
+    setIsEditModalOpen(true);
+  };
+
+  // Close Edit Modal
+  const closeEditModal = () => {
+    if (!editSubmitting) {
+      setIsEditModalOpen(false);
+    }
+  };
+
+  // Edit form change handler
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+    if (editFormErrors[name]) {
+      setEditFormErrors((prev) => ({ ...prev, [name]: null }));
+    }
+  };
+
+  // Edit form validation
+  const validateEditForm = () => {
+    const errors = {};
+    if (!editFormData.title.trim()) {
+      errors.title = "Event title is required.";
+    }
+    if (!editFormData.location.trim()) {
+      errors.location = "Location is required.";
+    }
+    if (!editFormData.date_time) {
+      errors.date_time = "Date & time is required.";
+    } else {
+      const parsedDate = new Date(editFormData.date_time);
+      if (isNaN(parsedDate.getTime())) {
+        errors.date_time = "Please enter a valid date and time.";
+      }
+    }
+    return errors;
+  };
+
+  // Save changes via PATCH /api/events/{id}/
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditSubmitError(null);
+
+    const errors = validateEditForm();
+    if (Object.keys(errors).length > 0) {
+      setEditFormErrors(errors);
+      return;
+    }
+
+    setEditSubmitting(true);
+
+    try {
+      const payload = {
+        title: editFormData.title.trim(),
+        description: editFormData.description.trim(),
+        date_time: new Date(editFormData.date_time).toISOString(),
+        location: editFormData.location.trim(),
+      };
+
+      const res = await apiRequest(`/api/events/${eventId}/`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 401) {
+        logout();
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        let errorMsgText = "Failed to update event.";
+        if (errorData) {
+          if (typeof errorData === "object") {
+            const messages = [];
+            for (const [key, val] of Object.entries(errorData)) {
+              const valText = Array.isArray(val) ? val.join(" ") : val;
+              messages.push(`${key}: ${valText}`);
+            }
+            errorMsgText = messages.join(" | ");
+          } else if (errorData.detail) {
+            errorMsgText = errorData.detail;
+          }
+        }
+        throw new Error(errorMsgText);
+      }
+
+      const updatedEvent = await res.json();
+      setEventData(updatedEvent);
+      setIsEditModalOpen(false);
+    } catch (err) {
+      setEditSubmitError(err.message || "An unexpected error occurred while saving.");
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   // Auth check loader
@@ -341,6 +480,14 @@ export default function EventDetailPage() {
                       </p>
                     )}
                   </div>
+
+                  <button
+                    onClick={openEditModal}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-[#57534E] shadow-2xs hover:bg-stone-50 hover:text-[#1C1917] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 self-start"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-[#78716C]" />
+                    <span>Edit Event</span>
+                  </button>
                 </div>
               </div>
 
@@ -535,6 +682,157 @@ export default function EventDetailPage() {
       <footer className="border-t border-stone-200/60 py-6 text-center text-xs text-[#78716C] mt-auto">
         © {new Date().getFullYear()} EventRSVP. All rights reserved.
       </footer>
+
+      {/* Edit Event Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1C1917]/40 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div
+            className="relative w-full max-w-lg rounded-3xl border border-stone-200 bg-white p-6 sm:p-8 shadow-2xl my-8 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
+              <div>
+                <h2 className="font-serif text-2xl font-bold tracking-tight text-[#1C1917]">
+                  Edit Event Details
+                </h2>
+                <p className="text-xs text-[#57534E] mt-0.5">
+                  Update your event information below.
+                </p>
+              </div>
+              <button
+                onClick={closeEditModal}
+                disabled={editSubmitting}
+                className="rounded-full p-2 text-[#78716C] hover:bg-stone-100 hover:text-[#1C1917] transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Error Banner */}
+            {editSubmitError && (
+              <div className="mb-5 flex items-start gap-2.5 rounded-2xl bg-rose-50 border border-rose-200 p-3.5 text-xs text-rose-800">
+                <AlertCircle className="h-4 w-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                <span className="flex-1">{editSubmitError}</span>
+              </div>
+            )}
+
+            {/* Event Form */}
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              {/* Event Title */}
+              <div>
+                <label className="block text-xs font-semibold text-[#1C1917] mb-1.5">
+                  Event Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={editFormData.title}
+                  onChange={handleEditChange}
+                  placeholder="e.g. Maya & Julian's Engagement Dinner"
+                  className={`w-full rounded-2xl border ${
+                    editFormErrors.title
+                      ? "border-rose-300 bg-rose-50/30 focus:ring-rose-200"
+                      : "border-stone-200 bg-stone-50/50 focus:ring-[#E4D9F7]"
+                  } px-4 py-2.5 text-sm text-[#1C1917] placeholder-stone-400 focus:bg-white focus:outline-none focus:ring-2 transition-all`}
+                />
+                {editFormErrors.title && (
+                  <p className="mt-1 text-xs text-rose-600">{editFormErrors.title}</p>
+                )}
+              </div>
+
+              {/* Date & Time */}
+              <div>
+                <label className="block text-xs font-semibold text-[#1C1917] mb-1.5">
+                  Date & Time <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  name="date_time"
+                  value={editFormData.date_time}
+                  onChange={handleEditChange}
+                  className={`w-full rounded-2xl border ${
+                    editFormErrors.date_time
+                      ? "border-rose-300 bg-rose-50/30 focus:ring-rose-200"
+                      : "border-stone-200 bg-stone-50/50 focus:ring-[#E4D9F7]"
+                  } px-4 py-2.5 text-sm text-[#1C1917] focus:bg-white focus:outline-none focus:ring-2 transition-all`}
+                />
+                {editFormErrors.date_time && (
+                  <p className="mt-1 text-xs text-rose-600">
+                    {editFormErrors.date_time}
+                  </p>
+                )}
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-xs font-semibold text-[#1C1917] mb-1.5">
+                  Location <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={editFormData.location}
+                  onChange={handleEditChange}
+                  placeholder="e.g. The Botanical Gardens, Pavilion 4"
+                  className={`w-full rounded-2xl border ${
+                    editFormErrors.location
+                      ? "border-rose-300 bg-rose-50/30 focus:ring-rose-200"
+                      : "border-stone-200 bg-stone-50/50 focus:ring-[#E4D9F7]"
+                  } px-4 py-2.5 text-sm text-[#1C1917] placeholder-stone-400 focus:bg-white focus:outline-none focus:ring-2 transition-all`}
+                />
+                {editFormErrors.location && (
+                  <p className="mt-1 text-xs text-rose-600">
+                    {editFormErrors.location}
+                  </p>
+                )}
+              </div>
+
+              {/* Description (Optional) */}
+              <div>
+                <label className="block text-xs font-semibold text-[#1C1917] mb-1.5">
+                  Description <span className="text-xs text-[#78716C] font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  name="description"
+                  rows={3}
+                  value={editFormData.description}
+                  onChange={handleEditChange}
+                  placeholder="Add any extra details, dress code, or note for your guests..."
+                  className="w-full rounded-2xl border border-stone-200 bg-stone-50/50 px-4 py-2.5 text-sm text-[#1C1917] placeholder-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E4D9F7] transition-all resize-none"
+                />
+              </div>
+
+              {/* Form Buttons */}
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100 mt-6">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={editSubmitting}
+                  className="rounded-full border border-stone-200 px-5 py-2.5 text-xs font-semibold text-[#57534E] hover:bg-stone-50 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#E4D9F7] px-6 py-2.5 text-xs font-semibold text-[#1C1917] border border-[#D4C3F2] hover:bg-[#D7C7F3] shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                >
+                  {editSubmitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#2D253B]" />
+                      <span>Saving Changes...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
