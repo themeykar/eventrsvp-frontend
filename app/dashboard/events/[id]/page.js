@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { isAuthenticated, logout } from "@/lib/auth";
 import { apiRequest } from "@/lib/api";
+import { QRCodeCanvas } from "qrcode.react";
 import {
   ArrowLeft,
   Calendar,
@@ -24,6 +25,8 @@ import {
   Link as LinkIcon,
   Pencil,
   X,
+  Download,
+  QrCode,
 } from "lucide-react";
 
 /**
@@ -201,6 +204,24 @@ export default function EventDetailPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  // Download QR Code image as PNG
+  const handleDownloadQR = () => {
+    const canvas = document.getElementById("event-qr-code");
+    if (!canvas) return;
+
+    const pngUrl = canvas.toDataURL("image/png");
+    const downloadLink = document.createElement("a");
+    downloadLink.href = pngUrl;
+    const safeTitle = (eventData?.title || "event")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    downloadLink.download = `${safeTitle || "event"}-qr-code.png`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
   };
 
   // Open Edit Modal pre-filled with current event values
@@ -538,39 +559,75 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              {/* Shareable Public RSVP Link Box */}
-              <div className="rounded-3xl border border-stone-200/90 bg-white p-6 shadow-[0_4px_20px_rgba(28,25,23,0.03)]">
-                <div className="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-[#78716C]">
-                  <LinkIcon className="h-3.5 w-3.5 text-[#78716C]" />
-                  <span>Shareable Public RSVP Link</span>
-                </div>
-                <p className="text-xs text-[#57534E] mb-4">
-                  Send this link to your guests via SMS, WhatsApp, or email. No guest account required.
-                </p>
+              {/* Shareable Public RSVP Link & QR Code Box */}
+              <div className="rounded-3xl border border-stone-200/90 bg-white p-6 sm:p-8 shadow-[0_4px_20px_rgba(28,25,23,0.03)]">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                  {/* Shareable Link Info */}
+                  <div className="md:col-span-2 space-y-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5 text-xs font-semibold uppercase tracking-wider text-[#78716C]">
+                        <LinkIcon className="h-3.5 w-3.5 text-[#78716C]" />
+                        <span>Shareable Public RSVP Link</span>
+                      </div>
+                      <p className="text-xs text-[#57534E]">
+                        Send this link to your guests via SMS, WhatsApp, or email, or share the QR code for instant scanning. No guest account required.
+                      </p>
+                    </div>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={shareableUrl}
-                    className="flex-1 rounded-xl border border-stone-200 bg-[#FAF8F5] px-4 py-2.5 text-xs sm:text-sm font-mono text-[#1C1917] select-all focus:outline-none"
-                  />
-                  <button
-                    onClick={handleCopyLink}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E4D9F7] px-5 py-2.5 text-xs font-semibold text-[#1C1917] border border-[#D4C3F2] hover:bg-[#D7C7F3] shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="h-4 w-4 text-emerald-700" />
-                        <span className="text-emerald-800 font-bold">Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 text-[#2D253B]" />
-                        <span>Copy Link</span>
-                      </>
-                    )}
-                  </button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={shareableUrl}
+                        className="flex-1 rounded-xl border border-stone-200 bg-[#FAF8F5] px-4 py-2.5 text-xs sm:text-sm font-mono text-[#1C1917] select-all focus:outline-none"
+                      />
+                      <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E4D9F7] px-5 py-2.5 text-xs font-semibold text-[#1C1917] border border-[#D4C3F2] hover:bg-[#D7C7F3] shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-4 w-4 text-emerald-700" />
+                            <span className="text-emerald-800 font-bold">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 text-[#2D253B]" />
+                            <span>Copy Link</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* QR Code Visual Card */}
+                  <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200/80 text-center">
+                    <div className="p-3 bg-white rounded-xl border border-stone-200/80 shadow-2xs mb-3">
+                      <QRCodeCanvas
+                        id="event-qr-code"
+                        value={shareableUrl}
+                        size={128}
+                        bgColor="#FFFFFF"
+                        fgColor="#1C1917"
+                        level="H"
+                        includeMargin={false}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1C1917] mb-1">
+                      <QrCode className="h-3.5 w-3.5 text-[#78716C]" />
+                      <span>Event QR Code</span>
+                    </div>
+                    <p className="text-[11px] text-[#78716C] mb-3 max-w-[170px]">
+                      Scan to view public invitation & RSVP
+                    </p>
+                    <button
+                      onClick={handleDownloadQR}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#D4C3F2] bg-[#E4D9F7] px-4 py-1.5 text-xs font-semibold text-[#1C1917] hover:bg-[#D7C7F3] shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                    >
+                      <Download className="h-3.5 w-3.5 text-[#2D253B]" />
+                      <span>Download QR</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 

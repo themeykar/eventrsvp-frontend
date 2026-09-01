@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Calendar,
+  CalendarPlus,
   MapPin,
   Clock,
   CheckCircle2,
@@ -44,6 +45,33 @@ function formatEventDateTime(dateTimeStr) {
   return `${dateFormatted} • ${timeFormatted}`;
 }
 
+/**
+ * Formats a JavaScript Date object to UTC iCalendar format (YYYYMMDDTHHMMSSZ).
+ */
+function formatDateToICal(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const month = pad(date.getUTCMonth() + 1);
+  const day = pad(date.getUTCDate());
+  const hours = pad(date.getUTCHours());
+  const minutes = pad(date.getUTCMinutes());
+  const seconds = pad(date.getUTCSeconds());
+  return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
+}
+
+/**
+ * Escapes special characters for iCalendar text fields.
+ */
+function escapeICalText(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "");
+}
+
 export default function PublicRSVPPage() {
   const params = useParams();
   const eventId = params?.id;
@@ -55,6 +83,7 @@ export default function PublicRSVPPage() {
 
   // Form input state
   const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
   const [status, setStatus] = useState("yes"); // 'yes' | 'no' | 'maybe'
   const [plusOneCount, setPlusOneCount] = useState(0);
   const [formErrors, setFormErrors] = useState({});
@@ -79,6 +108,7 @@ export default function PublicRSVPPage() {
         setExistingRSVP(parsed);
         // Pre-fill form state with existing values
         setGuestName(parsed.guest_name || "");
+        setGuestEmail(parsed.guest_email || "");
         setStatus(parsed.status || "yes");
         setPlusOneCount(parsed.plus_one_count || 0);
         return true;
@@ -135,6 +165,11 @@ export default function PublicRSVPPage() {
     if (!guestName.trim()) {
       errors.guestName = "Please enter your name.";
     }
+    if (!guestEmail.trim()) {
+      errors.guestEmail = "Please enter your email address.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      errors.guestEmail = "Please enter a valid email address.";
+    }
     if (!status) {
       errors.status = "Please select an RSVP response.";
     }
@@ -169,6 +204,7 @@ export default function PublicRSVPPage() {
 
       const payload = {
         guest_name: guestName.trim(),
+        guest_email: guestEmail.trim(),
         status,
         plus_one_count: status === "yes" ? Number(plusOneCount) || 0 : 0,
         guest_id: guestId,
@@ -190,6 +226,8 @@ export default function PublicRSVPPage() {
           msg = data.guest_id.join(" ");
         } else if (data.guest_name && Array.isArray(data.guest_name)) {
           msg = data.guest_name.join(" ");
+        } else if (data.guest_email && Array.isArray(data.guest_email)) {
+          msg = data.guest_email.join(" ");
         } else if (data.detail) {
           msg = data.detail;
         } else if (data.error) {
@@ -218,10 +256,56 @@ export default function PublicRSVPPage() {
   const handleEditRSVP = () => {
     if (existingRSVP) {
       setGuestName(existingRSVP.guest_name || "");
+      setGuestEmail(existingRSVP.guest_email || "");
       setStatus(existingRSVP.status || "yes");
       setPlusOneCount(existingRSVP.plus_one_count || 0);
     }
     setViewState("form");
+  };
+
+  // Download .ics calendar event file
+  const handleAddToCalendar = () => {
+    if (!eventData) return;
+
+    const startDate = eventData.date_time ? new Date(eventData.date_time) : new Date();
+    const isValidDate = !isNaN(startDate.getTime());
+    const actualStartDate = isValidDate ? startDate : new Date();
+    const actualEndDate = new Date(actualStartDate.getTime() + 2 * 60 * 60 * 1000);
+
+    const dtStart = formatDateToICal(actualStartDate);
+    const dtEnd = formatDateToICal(actualEndDate);
+    const summary = escapeICalText(eventData.title || "Event");
+    const description = escapeICalText(eventData.description || "");
+    const location = escapeICalText(eventData.location || "");
+
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//EventRSVP//EN",
+      "BEGIN:VEVENT",
+      `DTSTART:${dtStart}`,
+      `DTEND:${dtEnd}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${description}`,
+      `LOCATION:${location}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+
+    const safeTitle = (eventData.title || "event")
+      .replace(/[/\\?%*:|"<>]/g, "-")
+      .trim();
+    link.setAttribute("download", `${safeTitle}.ics`);
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Header Bar
@@ -391,8 +475,18 @@ export default function PublicRSVPPage() {
                   : "Your response has been saved as 'Not Certain'. You can update your response anytime if your plans change."}
               </p>
 
-              {/* Edit Response Action */}
-              <div className="mt-8 pt-4 border-t border-stone-100">
+              {/* Confirmation Card Actions */}
+              <div className="mt-8 pt-4 border-t border-stone-100 flex flex-wrap items-center justify-center gap-3">
+                {(existingRSVP.status === "yes" || existingRSVP.status === "maybe") && (
+                  <button
+                    onClick={handleAddToCalendar}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#D4C3F2] bg-[#E4D9F7] px-5 py-2.5 text-xs font-semibold text-[#1C1917] hover:bg-[#D7C7F3] shadow-2xs transition-all cursor-pointer"
+                  >
+                    <CalendarPlus className="h-3.5 w-3.5 text-[#1C1917]" />
+                    <span>Add to Calendar</span>
+                  </button>
+                )}
+
                 <button
                   onClick={handleEditRSVP}
                   className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-[#57534E] hover:bg-stone-50 hover:text-[#1C1917] shadow-2xs transition-all cursor-pointer"
@@ -479,6 +573,31 @@ export default function PublicRSVPPage() {
                   />
                   {formErrors.guestName && (
                     <p className="mt-1 text-xs text-rose-600">{formErrors.guestName}</p>
+                  )}
+                </div>
+
+                {/* Guest Email */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#1C1917] mb-1.5">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={guestEmail}
+                    onChange={(e) => {
+                      setGuestEmail(e.target.value);
+                      if (formErrors.guestEmail) setFormErrors((prev) => ({ ...prev, guestEmail: null }));
+                    }}
+                    placeholder="e.g. maya@example.com"
+                    className={`w-full rounded-2xl border ${
+                      formErrors.guestEmail
+                        ? "border-rose-300 bg-rose-50/30 focus:ring-rose-200"
+                        : "border-stone-200 bg-stone-50/50 focus:ring-[#E4D9F7]"
+                    } px-4 py-3 text-sm text-[#1C1917] placeholder-stone-400 focus:bg-white focus:outline-none focus:ring-2 transition-all`}
+                  />
+                  {formErrors.guestEmail && (
+                    <p className="mt-1 text-xs text-rose-600">{formErrors.guestEmail}</p>
                   )}
                 </div>
 
