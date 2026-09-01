@@ -113,6 +113,10 @@ export default function EventDetailPage() {
   // Copy link state
   const [copied, setCopied] = useState(false);
 
+  // CSV Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
+
   // Edit Event Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -222,6 +226,58 @@ export default function EventDetailPage() {
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
+  };
+
+  // Download RSVPs CSV Export file
+  const handleExportCSV = async () => {
+    if (!eventId || isExporting) return;
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      const res = await apiRequest(`/api/events/${eventId}/rsvps/export/`);
+
+      if (res.status === 401) {
+        logout();
+        return;
+      }
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        const msg =
+          errJson?.detail ||
+          errJson?.error ||
+          `Failed to export RSVPs (Server error ${res.status})`;
+        throw new Error(msg);
+      }
+
+      // Extract filename from Content-Disposition header if present
+      let filename = `${(eventData?.title || "event")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")}-rsvps.csv`;
+      const disposition = res.headers.get("Content-Disposition");
+      if (disposition && disposition.includes("filename=")) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+        if (matches && matches[1]) {
+          filename = matches[1].replace(/['"]/g, "");
+        }
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error exporting RSVPs CSV:", err);
+      setExportError(err.message || "Could not export CSV. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Open Edit Modal pre-filled with current event values
@@ -633,8 +689,24 @@ export default function EventDetailPage() {
 
               {/* Guest Responses Section */}
               <div className="rounded-3xl border border-stone-200/90 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgba(28,25,23,0.03)]">
-                {/* Header & Refresh Action */}
-                <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
+                {/* Export Error Banner */}
+                {exportError && (
+                  <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                      <span>{exportError}</span>
+                    </div>
+                    <button
+                      onClick={() => setExportError(null)}
+                      className="text-rose-600 hover:text-rose-900 font-semibold text-xs cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
+                {/* Header & Actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 mb-6">
                   <div>
                     <h2 className="font-serif text-2xl font-bold tracking-tight text-[#1C1917]">
                       Guest Responses
@@ -646,18 +718,34 @@ export default function EventDetailPage() {
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => fetchEventAndRSVPs(true)}
-                    disabled={isRefreshing}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#57534E] hover:bg-stone-50 hover:text-[#1C1917] shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <RotateCw
-                      className={`h-3.5 w-3.5 ${
-                        isRefreshing ? "animate-spin text-[#2D253B]" : ""
-                      }`}
-                    />
-                    <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={handleExportCSV}
+                      disabled={isExporting || rsvps.length === 0}
+                      title={rsvps.length === 0 ? "No guest responses to export" : "Export guest responses to CSV"}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#D4C3F2] bg-[#E4D9F7] px-4 py-1.5 text-xs font-semibold text-[#1C1917] hover:bg-[#D7C7F3] shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {isExporting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#2D253B]" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5 text-[#2D253B]" />
+                      )}
+                      <span>{isExporting ? "Exporting..." : "Export CSV"}</span>
+                    </button>
+
+                    <button
+                      onClick={() => fetchEventAndRSVPs(true)}
+                      disabled={isRefreshing}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#57534E] hover:bg-stone-50 hover:text-[#1C1917] shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <RotateCw
+                        className={`h-3.5 w-3.5 ${
+                          isRefreshing ? "animate-spin text-[#2D253B]" : ""
+                        }`}
+                      />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Empty State */}
