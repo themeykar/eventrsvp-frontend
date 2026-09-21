@@ -127,7 +127,7 @@ export default function SignupPage() {
       {/* Main Two-Column Split Container */}
       <main className="mx-auto w-full max-w-6xl my-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center py-8">
         {/* Left Column: Rich Value Proposition & Host Pitch (5 columns) */}
-        <div className="lg:col-span-5 flex flex-col justify-center pr-0 lg:pr-4">
+        <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col justify-center pr-0 lg:pr-4">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#E4D9F7]/70 border border-[#D4C3F2] px-3.5 py-1 text-xs font-semibold text-[#1C1917] w-fit mb-4">
 
             <span>Host Account Registration</span>
@@ -183,7 +183,7 @@ export default function SignupPage() {
         </div>
 
         {/* Right Column: Signup Form Card (7 columns) */}
-        <div className="lg:col-span-7">
+        <div className="order-1 lg:order-2 lg:col-span-7">
           <div className="rounded-3xl border border-stone-200/90 bg-white p-7 sm:p-10 shadow-[0_8px_30px_rgba(28,25,23,0.04)]">
             <div className="text-left">
               <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#1C1917]">

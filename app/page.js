@@ -102,7 +102,7 @@ export default function Home() {
                     Summer Evening Soirée
                   </h2>
                   <p className="text-sm text-[#78716C] mt-0.5">
-                    Hosted by Shalewa & Tobi
+                    Hosted by Olayinka & Tobi
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
