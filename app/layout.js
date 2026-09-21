@@ -15,9 +15,40 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "EventRSVP — Modern Event Invitations & Live RSVP Tracking",
+  metadataBase: new URL("https://eventrsvp.site"),
+  title: {
+    default: "EventRSVP — Gatherings made effortless",
+    template: "%s — EventRSVP",
+  },
   description:
-    "Create elegant event invitation links in seconds. Guests RSVP instantly with a single tap — no account or app required.",
+    "Create elegant event links in seconds. Your guests RSVP with a single tap — no passwords, apps, or friction.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "EventRSVP — Gatherings made effortless",
+    description:
+      "Create elegant event links in seconds. Your guests RSVP with a single tap — no passwords, apps, or friction.",
+    url: "https://eventrsvp.site",
+    siteName: "EventRSVP",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "EventRSVP — Gatherings made effortless",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EventRSVP — Gatherings made effortless",
+    description:
+      "Create elegant event links in seconds. Your guests RSVP with a single tap — no passwords, apps, or friction.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({ children }) {
