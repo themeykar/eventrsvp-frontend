@@ -266,13 +266,13 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 8 characters"
-                    className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 pr-11 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
+                    className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 pr-16 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[40px] min-h-[40px] p-2.5 rounded-lg text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[40px] min-h-[40px] p-2.5 rounded-lg text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -302,13 +302,13 @@ export default function SignupPage() {
                     value={passwordConfirmation}
                     onChange={(e) => setPasswordConfirmation(e.target.value)}
                     placeholder="Re-enter your password"
-                    className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 pr-11 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
+                    className="w-full rounded-xl border border-stone-200 bg-[#FAF8F5]/50 px-4 py-3 pr-16 text-sm text-[#1C1917] placeholder-[#A8A29E] transition-colors focus:border-[#2D253B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2D253B]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmation((prev) => !prev)}
                     aria-label={showConfirmation ? "Hide confirmation password" : "Show confirmation password"}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[40px] min-h-[40px] p-2.5 rounded-lg text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[40px] min-h-[40px] p-2.5 rounded-lg text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
                   >
                     {showConfirmation ? (
                       <EyeOff className="h-4 w-4" />
