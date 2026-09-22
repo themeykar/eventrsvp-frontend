@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,9 +21,25 @@ export default function SignupPage() {
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setErrorState] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const errorRef = useRef(null);
+
+  const setError = (msg) => {
+    setErrorState(msg);
+    if (msg) {
+      setTimeout(() => {
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    }
+  };
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [error]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -204,7 +220,10 @@ export default function SignupPage() {
 
             {/* Error Alert */}
             {error && (
-              <div className="mt-5 flex items-center gap-2.5 rounded-xl border border-rose-200/80 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
+              <div
+                ref={errorRef}
+                className="mt-5 flex items-center gap-2.5 rounded-xl border border-rose-200/80 bg-rose-50 p-3.5 text-xs font-medium text-rose-700"
+              >
                 <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
@@ -222,6 +241,7 @@ export default function SignupPage() {
                 <input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -241,6 +261,7 @@ export default function SignupPage() {
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -251,7 +272,7 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[40px] min-h-[40px] p-2.5 rounded-lg text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -276,6 +297,7 @@ export default function SignupPage() {
                   <input
                     id="passwordConfirmation"
                     type={showConfirmation ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                     value={passwordConfirmation}
                     onChange={(e) => setPasswordConfirmation(e.target.value)}
@@ -286,7 +308,7 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setShowConfirmation((prev) => !prev)}
                     aria-label={showConfirmation ? "Hide confirmation password" : "Show confirmation password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[40px] min-h-[40px] p-2.5 rounded-lg text-[#78716C] hover:text-[#1C1917] focus:outline-none focus:text-[#1C1917] transition-colors cursor-pointer"
                   >
                     {showConfirmation ? (
                       <EyeOff className="h-4 w-4" />
@@ -301,7 +323,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading || Boolean(successMsg)}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-[#D4C3F2] bg-[#E4D9F7] px-5 py-3.5 text-sm font-semibold text-[#1C1917] shadow-xs hover:bg-[#D7C7F3] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-[#D4C3F2] bg-[#E4D9F7] px-5 py-3.5 text-sm font-semibold text-[#1C1917] shadow-xs hover:bg-[#D7C7F3] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
                 {loading ? (
                   <>
